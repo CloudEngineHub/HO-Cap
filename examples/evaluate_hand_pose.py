@@ -1,5 +1,5 @@
 import pandas as pd
-from hocap.utils import *
+from hocap_toolkit.utils import *
 
 PCK_THRESH = [0.05, 0.1, 0.15, 0.2]  # Distance threshold for PCK calculation
 

@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=64.0", "torch>=2.3.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hocap-toolkit"
+version = "1.0.0"
+description = "Python package providing evaluation and visualization tools for the HoCap dataset."
+requires-python = ">=3.10"
+license = { "text" = "GPL-3.0" }
+authors = [
+    { name = "Jikai Wang", email = "jikai.wang@utdallas.edu" }
+]
+
+dependencies = [
+    "numpy>=1.26.4,<2",
+    "scipy>=1.13.1",
+    "matplotlib>=3.9.1",
+    "ruamel.yaml>=0.18.5",
+    "tqdm>=4.66.4",
+    "ninja>=1.11.1.1",
+    "opencv-python>=4.7.0",
+    "open3d>=0.18.0",
+    "av>=12.2.0",
+    "pyglet<2",
+    "trimesh==4.4.1",
+    "pyrender==0.1.45",
+    "pyOpenGL>=3.1.0",
+    "pyopengl-accelerate>=3.1.0; sys_platform != 'darwin'",
+    "mediapipe==0.10.14",
+    "gdown>=5.2.0",
+    "pycocotools>=2.0.7",
+    "chumpy @ git+https://github.com/gobanana520/chumpy.git",
+    "manopth @ git+https://github.com/gobanana520/manopth.git"
+]
+
+[tool.setuptools.packages]
+find = { include = ["hocap_toolkit"] }

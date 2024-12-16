@@ -1,12 +1,11 @@
 """Example of rendering a sequence."""
 
-from hocap.utils import *
-from hocap.renderers import SequenceRenderer
+from hocap_toolkit.utils import *
+from hocap_toolkit.renderers import SequenceRenderer
 
 
 if __name__ == "__main__":
-    sequence_folder = PROJ_ROOT / "data/subject_1/20231025_165502"
-    render_folder = sequence_folder / "renders"
+    sequence_folder = "datasets/subject_1/20231025_165502"
 
     renderer = SequenceRenderer(sequence_folder, device="cuda")
 
@@ -24,7 +23,7 @@ if __name__ == "__main__":
 
         # Save the rendered images
         for serial in render_colors:
-            save_folder = render_folder / serial
+            save_folder = Path(sequence_folder) / "renders" / serial
             save_folder.mkdir(parents=True, exist_ok=True)
             write_rgb_image(save_folder / f"vis_{frame_id:06d}.jpg", overlays[serial])
             write_rgb_image(

@@ -1,6 +1,6 @@
 import pandas as pd
 from scipy.spatial import cKDTree
-from hocap.utils import *
+from hocap_toolkit.utils import *
 
 
 def to_homo(pts):

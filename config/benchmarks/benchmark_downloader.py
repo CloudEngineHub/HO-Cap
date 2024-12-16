@@ -1,5 +1,5 @@
 import requests
-from hocap.utils import *
+from hocap_toolkit.utils import *
 
 
 def download_box_file(box_link, output_file):

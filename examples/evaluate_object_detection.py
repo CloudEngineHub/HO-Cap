@@ -1,7 +1,7 @@
 import pandas as pd
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
-from hocap.utils import *
+from hocap_toolkit.utils import *
 
 
 def evaluate_object_detection_results(gt_file, dt_file):
