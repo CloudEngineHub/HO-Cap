@@ -77,6 +77,9 @@ def main():
     tqdm.write(f"- Downloading 'poses.zip'...")
     download_box_file(dataset_files["poses"], PROJ_ROOT / "datasets/poses.zip")
 
+    tqdm.write(f"- Downloading 'labels.zip'...")
+    download_box_file(dataset_files["labels"], PROJ_ROOT / "datasets/labels.zip")
+
     subject_ids = (
         [f"subject_{i}" for i in range(1, 10)]
         if args.subject_id == "all"
@@ -118,5 +121,7 @@ if __name__ == "__main__":
         help="The subject id to download",
     )
     args = parser.parse_args()
+
+    args.subject_id = "subject_1"
 
     main()

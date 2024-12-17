@@ -1,8 +1,9 @@
 {
-    "demo_hand_pose_results.json": "https://utdallas.box.com/shared/static/efxgasbken4pnv7gko8ml98xwnrerzfb.json",
-    "demo_object_detections_results.json": "https://utdallas.box.com/shared/static/4bdeknsvlj78szejhr9mf70flm7jyzmi.json",
-    "demo_object_pose_results.json": "https://utdallas.box.com/shared/static/h6qqszib84kule8wuhsjlqgnrw4zq0ky.json",
-    "gt_hand_pose_results.json" : "https://utdallas.box.com/shared/static/eie0xbnrp7qafvw1f0x2r6b29v1bec3c.json",
-    "gt_object_detections_results.json": "https://utdallas.box.com/shared/static/xxhryajjan2toishmuwyhazv7hzp47z2.json",
-    "gt_object_pose_results.json": "https://utdallas.box.com/shared/static/mx031koahs25q622hff4v0wa41d92205.json"
+  "hpe_gt": "https://utdallas.box.com/shared/static/bjt8jty6ngwjj76nbuj8tncpnfnjrp2i.json",
+  "odet_gt_images": "https://utdallas.box.com/shared/static/6hd03ii4fzpqgjq1d8jekrp94ohvfo8z.json",
+  "odet_gt": "https://utdallas.box.com/shared/static/iq005s6yc8g3ktc08wfi28vxu7lerime.json",
+  "ope_gt": "https://utdallas.box.com/shared/static/w3akltk94wnz5nj25r371rpqbemmkd53.json",
+  "hpe_demo": "https://utdallas.box.com/shared/static/evtuw2iyk4okkpuv23z4ur0r4you2w74.json",
+  "odet_demo": "https://utdallas.box.com/shared/static/024x6jcjgfhu0dum89shy5urxgy5fmps.json",
+  "ope_demo": "https://utdallas.box.com/shared/static/mg67undy02c0roeasxv3hnjalg9059n5.json"
 }

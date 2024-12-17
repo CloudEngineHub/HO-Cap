@@ -1,5 +1,9 @@
 """Example of visualizing hand and object poses of one frame in a sequence."""
 
+import os
+
+os.environ["PYOPENGL_PLATFORM"] = "egl"  # GPU-based offscreen rendering
+
 from hocap_toolkit.utils import *
 from hocap_toolkit.renderers import SequenceRenderer
 

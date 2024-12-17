@@ -1,5 +1,9 @@
 """Example of rendering a sequence."""
 
+import os
+
+os.environ["PYOPENGL_PLATFORM"] = "egl"  # GPU-based offscreen rendering
+
 from hocap_toolkit.utils import *
 from hocap_toolkit.renderers import SequenceRenderer
 
@@ -25,9 +29,9 @@ if __name__ == "__main__":
         for serial in render_colors:
             save_folder = Path(sequence_folder) / "renders" / serial
             save_folder.mkdir(parents=True, exist_ok=True)
-            write_rgb_image(save_folder / f"vis_{frame_id:06d}.jpg", overlays[serial])
+            write_rgb_image(save_folder / f"vis_{frame_id:06d}.png", overlays[serial])
             write_rgb_image(
-                save_folder / f"color_{frame_id:06d}.jpg", render_colors[serial]
+                save_folder / f"color_{frame_id:06d}.png", render_colors[serial]
             )
             write_mask_image(
                 save_folder / f"seg_{frame_id:06d}.png", render_masks[serial]

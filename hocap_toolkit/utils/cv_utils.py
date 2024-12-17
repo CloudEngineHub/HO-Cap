@@ -1,5 +1,6 @@
 from .common_imports import *
 from .color_info import (
+    COLORS,
     OBJ_CLASS_COLORS,
     HAND_COLORS,
     HAND_BONE_COLORS,
@@ -463,7 +464,7 @@ def get_bbox_from_landmarks(landmarks, width, height, margin=3):
         return [-1, -1, -1, -1]
     # Get the bounding box using cv2.boundingRect
     x, y, w, h = cv2.boundingRect(marks[valid_mask])
-    bbox = [x, y, x + w, y + h]
+    bbox = np.array([x, y, x + w, y + h])
     # Apply margin while ensuring the bounding box stays within image bounds
     bbox[0] = max(0, bbox[0] - margin)
     bbox[1] = max(0, bbox[1] - margin)
@@ -478,7 +479,7 @@ def get_bbox_from_mask(mask, margin=3):
     if not np.any(mask):
         return [-1.0, -1.0, -1.0, -1.0]
     x, y, w, h = cv2.boundingRect(mask.astype(np.uint8))
-    bbox = [x, y, x + w, y + h]
+    bbox = np.array([x, y, x + w, y + h])
     bbox[0] = max(0, bbox[0] - margin)
     bbox[1] = max(0, bbox[1] - margin)
     bbox[2] = min(width - 1, bbox[2] + margin)
@@ -542,7 +543,7 @@ def draw_debug_image(
                 continue
             box = get_bbox_from_mask(mask == label)
             cv2.rectangle(
-                overlay, (box[0], box[1]), (box[2], box[3]), colors[label].rgb, 2
+                overlay, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), colors[label].rgb, 2
             )
 
     # Draw hand mask
@@ -625,9 +626,9 @@ def draw_debug_image(
                 cv2.putText(
                     overlay,
                     text,
-                    (x, y - 5),
+                    (x, y - 11),
                     cv2.FONT_HERSHEY_DUPLEX,
-                    1,
+                    .8,
                     color.rgb,
                     1,
                     cv2.LINE_AA,
