@@ -9,7 +9,7 @@ from hocap_toolkit.utils import *
 from hocap_toolkit.loaders import SequenceLoader
 from hocap_toolkit.layers import MANOGroupLayer
 
-PROJ_ROOT = Path(__file__).resolve().parents[1]
+PROJ_ROOT = Path(__file__).parents[1]
 
 HELP_INFO = """
 =============================
