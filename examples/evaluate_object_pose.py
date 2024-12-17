@@ -1,6 +1,8 @@
 import pandas as pd
 from scipy.spatial import cKDTree
-from hocap.utils import *
+from hocap_toolkit.utils import *
+
+PROJ_ROOT = Path(__file__).parent.parent
 
 
 def to_homo(pts):
@@ -84,9 +86,12 @@ def compute_auc(rec, max_val=0.1):
     return ap / max_val
 
 
-def get_object_pose_evaluation(gt_pose_file, pred_pose_file):
-    gt_poses = read_data_from_json(gt_pose_file)
-    pred_poses = read_data_from_json(pred_pose_file)
+def get_object_pose_evaluation(gt_file, pred_file):
+    gt_results_file = Path(gt_file)
+    pred_results_file = Path(pred_file)
+
+    gt_poses = read_data_from_json(gt_results_file)
+    pred_poses = read_data_from_json(pred_results_file)
     object_ids = sorted(pred_poses.keys())
 
     pd_data = {
@@ -104,10 +109,13 @@ def get_object_pose_evaluation(gt_pose_file, pred_pose_file):
             continue
 
         object_mesh = trimesh.load(
-            PROJ_ROOT / f"data/models/{object_id}/cleaned_mesh_10000.obj", process=False
+            PROJ_ROOT / "datasets" / f"models/{object_id}/cleaned_mesh_10000.obj",
+            process=False,
         )
-        vertices = object_mesh.vertices
+        vertices = object_mesh.vertices.astype(np.float32)
 
+        adi_errs_obj = []
+        add_errs_obj = []
         for key in sorted(pred_poses[object_id].keys()):
             if key not in gt_poses[object_id]:
                 continue
@@ -118,43 +126,81 @@ def get_object_pose_evaluation(gt_pose_file, pred_pose_file):
             adi = adi_err(pred_ob_in_cam, gt_ob_in_cam, vertices.copy())
             add = add_err(pred_ob_in_cam, gt_ob_in_cam, vertices.copy())
 
+            adi_errs_obj.append(adi)
+            add_errs_obj.append(add)
+
             adi_errs.append(adi)
             add_errs.append(add)
 
-        adi_dists = np.array(adi_errs)
-        add_dists = np.array(add_errs)
-
-        ADDS_AUC = compute_auc(adi_errs, max_val=0.1) * 100
-        ADD_AUC = compute_auc(add_errs, max_val=0.1) * 100
+        ADDS_ERR = np.mean(adi_errs_obj) * 100
+        ADD_ERR = np.mean(add_errs_obj) * 100
+        ADDS_AUC = compute_auc(adi_errs_obj, max_val=0.1) * 100
+        ADD_AUC = compute_auc(add_errs_obj, max_val=0.1) * 100
 
         pd_data["Object_ID"].append(object_id)
-        pd_data["ADD-S_err (cm)"].append(np.mean(adi_errs) * 100)
-        pd_data["ADD_err (cm)"].append(np.mean(add_errs) * 100)
+        pd_data["ADD-S_err (cm)"].append(ADDS_ERR)
+        pd_data["ADD_err (cm)"].append(ADD_ERR)
         pd_data["ADD-S_AUC (%)"].append(ADDS_AUC)
         pd_data["ADD_AUC (%)"].append(ADD_AUC)
+
+    # Average
+    ADDS_ERR = np.mean(adi_errs) * 100
+    ADD_ERR = np.mean(add_errs) * 100
+    ADDS_AUC = compute_auc(adi_errs, max_val=0.1) * 100
+    ADD_AUC = compute_auc(add_errs, max_val=0.1) * 100
     pd_data["Object_ID"].append("Average")
-    pd_data["ADD-S_err (cm)"].append(np.mean(adi_dists) * 100)
-    pd_data["ADD_err (cm)"].append(np.mean(add_dists) * 100)
-    pd_data["ADD-S_AUC (%)"].append(np.mean(pd_data["ADD-S_AUC (%)"]))
-    pd_data["ADD_AUC (%)"].append(np.mean(pd_data["ADD_AUC (%)"]))
+    pd_data["ADD-S_err (cm)"].append(ADDS_ERR)
+    pd_data["ADD_err (cm)"].append(ADD_ERR)
+    pd_data["ADD-S_AUC (%)"].append(ADDS_AUC)
+    pd_data["ADD_AUC (%)"].append(ADD_AUC)
 
     df = pd.DataFrame(pd_data)
 
-    result_str = df.to_string(index=False)
-    print(result_str)
+    # Save to csv
+    save_csv_file = pred_results_file.parent / f"{pred_results_file.stem}_add_adds.csv"
+    df.to_csv(save_csv_file, index=False)
 
-    # save to txt
-    save_txt_file = pred_pose_file.parent / f"{pred_pose_file.stem}_ADD_ADDS.txt"
+    # Save to txt
+    iStr = "{:>15} {:>15} {:>15} {:>15} {:>15}"
+    result_str = [
+        iStr.format(
+            "Object_ID",
+            "ADD-S_err (cm)",
+            "ADD_err (cm)",
+            "ADD-S_AUC (%)",
+            "ADD_AUC (%)",
+        ),
+        iStr.format(
+            "|" + "-" * 14,
+            "|" + "-" * 14,
+            "|" + "-" * 14,
+            "|" + "-" * 14,
+            "|" + "-" * 14 + " |",
+        ),
+    ]
+    for i in range(len(pd_data["Object_ID"])):
+        result_str.append(
+            iStr.format(
+                pd_data["Object_ID"][i],
+                f"{pd_data['ADD-S_err (cm)'][i]:.2f}",
+                f"{pd_data['ADD_err (cm)'][i]:.2f}",
+                f"{pd_data['ADD-S_AUC (%)'][i]:.2f}",
+                f"{pd_data['ADD_AUC (%)'][i]:.2f}",
+            )
+        )
+    result_str = "\n".join(result_str)
+    save_txt_file = pred_results_file.parent / f"{pred_results_file.stem}_add_adds.txt"
     save_txt_file.write_text(result_str)
-    tqdm.write(f"  * Results saved to {save_txt_file}")
+    tqdm.write(f"  * Results saved to {save_csv_file}, {save_txt_file}")
+
+    print(result_str)
 
 
 if __name__ == "__main__":
-    gt_pose_file = PROJ_ROOT / "config/benchmarks/gt_object_pose_results.json"
-    dt_pose_file = PROJ_ROOT / "config/benchmarks/demo_object_pose_results.json"
+    gt_file = "config/benchmarks/ope_gt.json"
+    pred_file = "results/ope_demo.json"
 
-    tqdm.write("- Evaluating Object Pose Estimation results...")
-
-    get_object_pose_evaluation(gt_pose_file, dt_pose_file)
+    tqdm.write(f"- Evaluating Object Pose Estimation results...")
+    get_object_pose_evaluation(gt_file, pred_file)
 
     tqdm.write("- Evaluation Done...")

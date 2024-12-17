@@ -1,5 +1,7 @@
 import requests
-from hocap.utils import *
+from hocap_toolkit.utils import *
+
+PROJ_ROOT = Path(__file__).parent.parent.parent
 
 
 def download_box_file(box_link, output_file):
@@ -52,8 +54,12 @@ def download_box_file(box_link, output_file):
 
 
 if __name__ == "__main__":
-    benchmark_files = read_data_from_json(PROJ_ROOT / "config/hocap_benchmarks.json")
+    bmark_data = read_data_from_yaml("config/hocap_benchmarks.yaml")
 
-    for file_name, file_link in benchmark_files.items():
+    for file_name, file_link in bmark_data.items():
         tqdm.write(f"- Downloading {file_name}...")
-        download_box_file(file_link, PROJ_ROOT / "config" / "benchmarks" / file_name)
+        if "demo" in file_name:
+            save_path = PROJ_ROOT / "results" / f"{file_name}.json"
+        else:
+            save_path = PROJ_ROOT / "config" / "benchmarks" / f"{file_name}.json"
+        download_box_file(file_link, save_path)

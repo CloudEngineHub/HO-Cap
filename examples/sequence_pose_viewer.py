@@ -1,14 +1,19 @@
 """Example of visualizing hand and object poses of one frame in a sequence."""
 
-from hocap.utils import *
-from hocap.renderers import SequenceRenderer
+import os
 
+os.environ["PYOPENGL_PLATFORM"] = "egl"  # GPU-based offscreen rendering
+
+from hocap_toolkit.utils import *
+from hocap_toolkit.renderers import SequenceRenderer
+
+PROJ_ROOT = Path(__file__).parent.parent
 
 if __name__ == "__main__":
-    sequence_folder = PROJ_ROOT / "data/subject_1/20231025_165502"
+    sequence_folder = PROJ_ROOT / "datasets/subject_1/20231025_165502"
     renderer = SequenceRenderer(sequence_folder, device="cuda")
 
-    frame_id = 80
+    frame_id = 70
 
     # Render the scene and get the rendered images
     renderer.create_scene(frame_id)
@@ -22,4 +27,4 @@ if __name__ == "__main__":
         for serial, render_color in render_colors.items()
     ]
 
-    display_all_camera_images(overlays, list(render_colors.keys()))
+    draw_all_camera_images(overlays, list(render_colors.keys()), show_only=True)

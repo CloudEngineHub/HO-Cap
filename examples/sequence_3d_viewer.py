@@ -5,9 +5,11 @@ import open3d.visualization.rendering as rendering
 
 from time import sleep
 from torch.utils import dlpack
-from hocap.utils import *
-from hocap.loaders import SequenceLoader
+from hocap_toolkit.utils import *
+from hocap_toolkit.loaders import SequenceLoader
+from hocap_toolkit.layers import MANOGroupLayer
 
+PROJ_ROOT = Path(__file__).resolve().parents[1]
 
 HELP_INFO = """
 =============================
@@ -23,27 +25,28 @@ R: reset camera
 
 class SequenceViewer:
     def __init__(self, sequence_folder, device="cuda") -> None:
-        self._data_folder = Path(sequence_folder).resolve()
+        self._data_folder = Path(sequence_folder)
         self._device = device
+        self._logger = get_logger(self.__class__.__name__)
 
-        self._loader = SequenceLoader(sequence_folder, load_mano=True, device=device)
+        self._loader = SequenceLoader(sequence_folder, device=device)
         self._num_frames = self._loader.num_frames
         self._rs_serials = self._loader.rs_serials
         self._rs_master = self._loader.rs_master
         self._master_id = self._rs_serials.index(self._rs_master)
-        self._num_cameras = self._loader.num_cameras
+        self._num_cameras = len(self._rs_serials)
         self._rs_height = self._loader.rs_height
         self._rs_width = self._loader.rs_width
-        self._load_mano = self._loader.load_mano
-        self._intrinsics = self._loader.intrinsics.cpu().numpy()
-        self._extrinsics = self._loader.extrinsics2world.cpu().numpy()
+        self._rs_Ks = self._loader.rs_Ks.cpu().numpy()
+        self._rs_RTs = self._loader.rs_RTs.cpu().numpy()
         self._mano_sides = self._loader.mano_sides
 
-        if self._load_mano:
-            self._mano_group_layer = self._loader.mano_group_layer
-            self._mano_verts = self._get_mano_verts()
-            self._mano_faces = self._get_mano_faces()
-            self._mano_colors = self._get_mano_colors()
+        self._mano_group_layer = self._init_mano_group_layer()
+        self._mano_verts = self._get_mano_verts()
+        self._mano_faces = self._get_mano_faces()
+        self._mano_colors = self._get_mano_colors()
+
+        self._poses_o = self._load_poses_o()
 
     def run(self):
         self._is_done = False
@@ -64,7 +67,6 @@ class SequenceViewer:
         self._show_pcds = True  # show point clouds
         self._show_mano = False  # show mano mesh
         self._show_object = False  # show object mesh
-        # self._cam_id = self._master_id  # camera view
         self._cam_id = self._rs_serials.index(self._rs_master)  # camera view
 
         # materials
@@ -85,16 +87,15 @@ class SequenceViewer:
         self._pcd.point.colors = zeros
         self._pcd.point.normals = zeros
 
-        if self._load_mano:
-            mano_mesh = o3d.geometry.TriangleMesh()
-            mano_mesh.vertices = o3d.utility.Vector3dVector(self._mano_verts[0].numpy())
-            mano_mesh.triangles = o3d.utility.Vector3iVector(self._mano_faces)
-            mano_mesh.vertex_colors = o3d.utility.Vector3dVector(self._mano_colors)
-            mano_mesh.compute_vertex_normals()
-            mano_ls = o3d.geometry.LineSet.create_from_triangle_mesh(mano_mesh)
-            mano_ls.paint_uniform_color((0.0, 0.0, 0.0))  # black
-            self._mano_mesh = o3d.t.geometry.TriangleMesh.from_legacy(mano_mesh)
-            self._mano_ls = o3d.t.geometry.LineSet.from_legacy(mano_ls)
+        mano_mesh = o3d.geometry.TriangleMesh()
+        mano_mesh.vertices = o3d.utility.Vector3dVector(self._mano_verts[0].numpy())
+        mano_mesh.triangles = o3d.utility.Vector3iVector(self._mano_faces)
+        mano_mesh.vertex_colors = o3d.utility.Vector3dVector(self._mano_colors)
+        mano_mesh.compute_vertex_normals()
+        mano_ls = o3d.geometry.LineSet.create_from_triangle_mesh(mano_mesh)
+        mano_ls.paint_uniform_color((0.0, 0.0, 0.0))  # black
+        self._mano_mesh = o3d.t.geometry.TriangleMesh.from_legacy(mano_mesh)
+        self._mano_ls = o3d.t.geometry.LineSet.from_legacy(mano_ls)
 
         # init gui
         self._app = gui.Application.instance
@@ -110,6 +111,16 @@ class SequenceViewer:
 
         # add initial dummy geometry
         self._widget3d.scene.add_geometry("pcd", self._pcd, self._mat_pcd)
+        self._widget3d.scene.show_geometry("pcd", self._show_pcds)
+        self._widget3d.scene.add_geometry("mano", self._mano_mesh, self._mat_mesh)
+        self._widget3d.scene.add_geometry("mano_ls", self._mano_ls, self._mat_line)
+        self._widget3d.scene.show_geometry("mano", self._show_mano)
+        self._widget3d.scene.show_geometry("mano_ls", self._show_mano)
+        for i, mesh_file in enumerate(self._loader.object_textured_mesh_files):
+            self._widget3d.scene.add_model(
+                f"object_{i}", o3d.io.read_triangle_model(mesh_file)
+            )
+            self._widget3d.scene.show_geometry(f"object_{i}", self._show_object)
 
         # update camera
         self._reset_camera()
@@ -118,7 +129,7 @@ class SequenceViewer:
         self._app.run_in_thread(self.update)
         self._app.run()
 
-    def _create_window(self, title="Sequence Viewer", width=640, height=480):
+    def _create_window(self, title="Sequence Viewer", width=1280, height=720):
         # create window
         window = self._app.create_window(title, width, height)
 
@@ -126,6 +137,28 @@ class SequenceViewer:
         self._widget3d = gui.SceneWidget()
         self._widget3d.scene = rendering.Open3DScene(window.renderer)
         self._widget3d.scene.set_background(self._bg_color)
+        self._widget3d.scene.scene.enable_sun_light(False)
+        self._widget3d.scene.scene.enable_indirect_light(True)
+        point_light_postions = [
+            np.array([0.5, 0.5, 1.0]).astype(np.float32),
+            np.array([-0.5, 0.5, 1.0]).astype(np.float32),
+            np.array([-0.5, -0.5, 1.0]).astype(np.float32),
+            np.array([0.5, -0.5, 1.0]).astype(np.float32),
+            np.array([0.5, -0.5, 0.0]).astype(np.float32),
+            np.array([0.5, 0.5, 0.0]).astype(np.float32),
+            np.array([-0.5, 0.5, 0.0]).astype(np.float32),
+            np.array([-0.5, -0.5, 0.0]).astype(np.float32),
+        ]
+        for idx, pos in enumerate(point_light_postions):
+            self._widget3d.scene.scene.add_point_light(
+                name=f"light_{idx}",
+                color=np.array([1.0, 1.0, 1.0]).astype(np.float32),
+                position=pos,
+                intensity=1e6,
+                falloff=1e2,
+                cast_shadows=False,
+            )
+
         view = self._widget3d.scene.view
         view.set_post_processing(False)
         window.add_child(self._widget3d)
@@ -177,12 +210,12 @@ class SequenceViewer:
         chk_box.set_on_checked(self._on_pcds)
         geo_blk.add_child(chk_box)
         chk_box = gui.Checkbox("Hand Mesh")
-        chk_box.enabled = self._load_mano
+        chk_box.enabled = True
         chk_box.checked = self._show_mano
         chk_box.set_on_checked(self._on_mano)
         geo_blk.add_child(chk_box)
         chk_box = gui.Checkbox("Object Mesh")
-        chk_box.enabled = False
+        chk_box.enabled = True
         chk_box.checked = self._show_object
         chk_box.set_on_checked(self._on_object)
         geo_blk.add_child(chk_box)
@@ -314,7 +347,8 @@ class SequenceViewer:
 
     def _on_object(self, checked):
         self._show_object = checked
-        self._widget3d.scene.show_geometry("object", checked)
+        for i in range(len(self._loader.object_textured_mesh_files)):
+            self._widget3d.scene.show_geometry(f"object_{i}", checked)
 
     def _on_point_size(self, value):
         self._mat_pcd.point_size = int(value)
@@ -354,66 +388,56 @@ class SequenceViewer:
             up = np.matmul(R.T, np.array([0, -1, 0]))
             return center, eye, up
 
-        extrinsics = self._extrinsics[self._cam_id]
+        extrinsics = self._rs_RTs[self._cam_id]
         center, eye, up = extrinsics_to_look_at(extrinsics)
         # self._widget3d.scene.camera.look_at(center, eye, up)
         self._widget3d.look_at(center, eye, up)
 
-    def _load_object_poses(self):
-        pose_file = self._seq_folder / "poses_o.npy"
-        poses = np.load(pose_file)
-        poses = np.stack([quat_to_mat(p) for p in poses], axis=0)
+    def _init_mano_group_layer(self):
+        betas = [self._loader.mano_beta.cpu().numpy() for _ in self._mano_sides]
+        return MANOGroupLayer(self._mano_sides, betas).to(self._device)
+
+    def _load_poses_m(self):
+        poses = np.load(self._data_folder / "poses_m.npy").astype(np.float32)
+        poses = np.concatenate(
+            [poses[0 if side == "right" else 1] for side in self._mano_sides], axis=1
+        )
+        poses = torch.from_numpy(poses).to(self._device)
         return poses
 
-    def _load_mano_poses(self):
-        pose_file = self._seq_folder / "poses_m.npy"
-        poses = np.load(pose_file)
-        poses = [
-            torch.from_numpy(poses[0 if side == "right" else 1]).to(self._device)
-            for side in self._mano_sides
-        ]
+    def _load_poses_o(self):
+        poses = np.load(self._data_folder / "poses_o.npy").astype(np.float32)
+        poses = np.stack(
+            [quat_to_mat(p) for p in poses], axis=1
+        )  # (num_frames, num_objects, 4, 4)
+        print(f"poses_o: {poses.shape}")
         return poses
 
     def _get_mano_verts(self):
         pose_file = self._data_folder / "poses_m.npy"
-        poses = np.load(pose_file)
-        poses = [
-            torch.from_numpy(poses[0 if side == "right" else 1]).to(self._device)
-            for side in self._mano_sides
-        ]
-        p = torch.cat(poses, dim=1)
-        v, _ = self._mano_group_layer(p)
-        if p.size(0) == 1:
-            v = v[0]
-        return v.cpu()
+        poses = np.load(pose_file).astype(np.float32)
+        poses = np.concatenate(
+            [poses[0 if side == "right" else 1] for side in self._mano_sides], axis=1
+        )
+        poses = torch.from_numpy(poses).to(self._device)
+        verts, _ = self._mano_group_layer(poses)
+        return verts.cpu()
 
     def _get_mano_faces(self):
-        mano_faces = np.stack(
-            [
-                np.concatenate(
-                    [
-                        self._mano_group_layer.f.cpu().numpy(),
-                        (
-                            np.array(NEW_MANO_FACES)
-                            if side == "right"
-                            else np.array(NEW_MANO_FACES)[:, ::-1]
-                        ),
-                    ]
-                )
-                for side in self._mano_sides
-            ]
-        ).reshape(-1, 3)
-        return mano_faces
+        faces = [self._mano_group_layer.f.cpu().numpy()]
+        for i, side in enumerate(self._mano_sides):
+            faces.append(np.array(NEW_MANO_FACES[side]) + i * NUM_MANO_VERTS)
+        faces = np.concatenate(faces, axis=0).astype(np.int64)
+        return faces
 
     def _get_mano_colors(self):
-        mano_colors = np.stack(
+        colors = np.stack(
             [
-                [HAND_COLORS[1].rgb if side == "right" else HAND_COLORS[2].rgb]
-                * NUM_MANO_VERTS
+                [HAND_COLORS[1 if side == "right" else 2].rgb_norm] * NUM_MANO_VERTS
                 for side in self._mano_sides
             ]
         ).reshape(-1, 3)
-        return mano_colors
+        return colors
 
     def step(self):
         if not self._is_paused:
@@ -442,12 +466,11 @@ class SequenceViewer:
                 )
 
             if self._show_mano:
-                verts_m = self._mano_verts[self._frame_id]
-                verts_m = o3c.Tensor.from_dlpack(dlpack.to_dlpack(verts_m))
-                self._mano_mesh.vertex.positions = verts_m
-                self._mano_ls.point.positions = verts_m
-                # self._mano_mesh = self._mano_mesh.transform(np.eye(4))
-                # self._mano_ls = self._mano_ls.transform(np.eye(4))
+                self._mano_mesh.vertex.positions = self._mano_ls.point.positions = (
+                    o3c.Tensor.from_dlpack(
+                        dlpack.to_dlpack(self._mano_verts[self._frame_id])
+                    )
+                )
                 self._widget3d.scene.remove_geometry("mano")
                 self._widget3d.scene.add_geometry(
                     "mano", self._mano_mesh, self._mat_mesh
@@ -457,6 +480,10 @@ class SequenceViewer:
                     "mano_ls", self._mano_ls, self._mat_line
                 )
 
+            if self._show_object:
+                for i, pose in enumerate(self._poses_o[self._frame_id]):
+                    self._widget3d.scene.set_geometry_transform(f"object_{i}", pose)
+
         while not self._is_done:
             sleep(0.067)
             if not self._is_done:
@@ -465,9 +492,8 @@ class SequenceViewer:
 
 
 if __name__ == "__main__":
-    sequence_name = "subject_1/20231025_165502"
+    sequence_folder = "datasets/subject_1/20231025_165502"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    viewer = SequenceViewer(
-        sequence_folder=PROJ_ROOT / "data" / sequence_name, device="cuda"
-    )
+    viewer = SequenceViewer(sequence_folder, device=device)
     viewer.run()

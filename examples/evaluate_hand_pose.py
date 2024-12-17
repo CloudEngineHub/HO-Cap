@@ -1,5 +1,5 @@
 import pandas as pd
-from hocap.utils import *
+from hocap_toolkit.utils import *
 
 PCK_THRESH = [0.05, 0.1, 0.15, 0.2]  # Distance threshold for PCK calculation
 
@@ -123,7 +123,10 @@ def acc_distance(distances, thr=0.5):
     return -1
 
 
-def get_hand_pose_evaluation(gt_result_file, pred_result_file):
+def get_hand_pose_evaluation(gt_file, pred_file):
+    gt_result_file = Path(gt_file)
+    pred_result_file = Path(pred_file)
+
     hand_json = read_data_from_json(gt_result_file)
     hamer_out_json = read_data_from_json(pred_result_file)
 
@@ -218,17 +221,15 @@ def get_hand_pose_evaluation(gt_result_file, pred_result_file):
     print(result_str)
 
     # save to txt
-    save_txt_file = pred_result_file.parent / f"{pred_result_file.stem}_PCK_MPJPE.txt"
+    save_txt_file = pred_result_file.parent / f"{pred_result_file.stem}_pck_mpjpe.txt"
     save_txt_file.write_text(result_str)
     tqdm.write(f"  * Results saved to {save_txt_file}")
 
 
 if __name__ == "__main__":
-    gt_result_file = PROJ_ROOT / "config/benchmarks/gt_hand_pose_results.json"
-    pred_result_file = PROJ_ROOT / "config/benchmarks/demo_hand_pose_results.json"
+    gt_file = "config/benchmarks/hpe_gt.json"
+    pred_file = "results/hpe_demo.json"
 
     tqdm.write("- Evaluating Hand Pose Estimation results...")
-
-    get_hand_pose_evaluation(gt_result_file, pred_result_file)
-
+    get_hand_pose_evaluation(gt_file, pred_file)
     tqdm.write("- Evaluation Done...")
