@@ -114,13 +114,13 @@ This code is tested with [Python 3.10](https://docs.python.org/3.10) and [CUDA 1
 1. Run below code to download the whole dataset:
 
    ```
-   python dataset_downloader.py --subject_id all
+   python tools/hocap_downloader.py --subject_id all
    ```
 
 2. Or you can download the dataset for a specific subject:
 
    ```
-   python dataset_downloader.py --subject_id 1
+   python tools/hocap_downloader.py --subject_id subject_1
    ```
 
 3. The downloaded `.zip` files will be extracted to the `./datasets` directory. And the directory should look like this:
@@ -152,6 +152,7 @@ This code is tested with [Python 3.10](https://docs.python.org/3.10) and [CUDA 1
 ## Labels in the HOCap Dataset
 
 The HOCap dataset provides the following labels:
+
 - 3d hand keypoints
 - 2d hand keypoints
 - hand bounding boxes
