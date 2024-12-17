@@ -4,7 +4,7 @@ import torch
 from torch.nn import Module
 from manopth.manolayer import ManoLayer
 
-PROJ_ROOT = Path(__file__).resolve().parents[2]
+PROJ_ROOT = Path(__file__).parent.parent.parent
 
 
 class MANOLayer(Module):

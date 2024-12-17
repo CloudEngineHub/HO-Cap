@@ -31,7 +31,7 @@ Jikai Wang, Qifan Zhang, Yu-Wei Chao, Bowen Wen, Xiaohu Guo, Yu Xiang
     - [Hand Pose Estimation Evaluation](#hand-pose-estimation-evaluation)
     - [Object Pose Estimation Evaluation](#object-pose-estimation-evaluation)
     - [Object Detection Evaluation](#object-detection-evaluation)
-  - [Training YOLO11 and RT-DETR for Object Detection](#training-yolo11-and-rt-detr-for-object-detection)
+  - [HOCap Dataset Split for Training and Testing](#hocap-dataset-split-for-training-and-testing)
 
 ## News
 
@@ -294,9 +294,45 @@ If the evaluation results are saved in the same format, the evaluation codes bel
 
    </details>
 
-## Training YOLO11 and RT-DETR for Object Detection
+## HOCap Dataset Split for Training and Testing
 
-The HOCap Toolkit provides the training scripts and datasets for [YOLO11](https://utdallas.box.com/s/jd53ntvhtphdceyqkqfygq05kn525pfp) and [RT-DETR](https://utdallas.box.com/s/qbxqk96c6t8w7d02ifhu1nhbiqy3dj2d).
+The train/valid/test split is defined separately for each task (HPE, ODET, OPE) by files `config/hocap_hpt.json`, `config/hocap_odt.json`, and `config/hocap_ope.json`. Each configuration file has the following structure:
+
+```json
+{
+  "train": [[0, 0, 0, 0], ...],
+  "valid": [...],
+  "test": [...]
+}
+```
+
+Each item is in format `[subject_index, sequence_index, camera_index, frame_index]`. For example, `[0, 0, 0, 0]` refers to `subject_1/20231022_190534/105322251564` folder and frame `color_000000.jpg`/ `depth_000000.png`.
+
+To save time, we provide the pre-defined splits for each task, the split datasets could be downloaded [here](https://utdallas.box.com/s/dt19tcvhwitz223cjqa5riot6zcf6yba).
+
+Or run below code to split the HOCap dataset manually, the split dataset will be saved in the `./datasets` directory.
+
+- Hand Pose Estimation (HPE) task:
+
+  ```bash
+  python tools/hocap_dataset_split.py --task hpe
+  ```
+
+- Object Pose Estimation (OPE) task:
+
+  ```bash
+  python tools/hocap_dataset_split.py --task ope
+  ```
+
+- Object Detection (ODET) task:
+  - COCO annotation type:
+    ```bash
+    python tools/hocap_dataset_split.py --task odet --anno_type coco
+    ```
+  - YOLO annotation type:
+    ```bash
+    python tools/hocap_dataset_split.py --task odet --anno_type yolo
+    ```
 
 [^1]: [A2J-Transformer: Anchor-to-Joint Transformer Network for 3D Interacting Hand Pose Estimation from a Single RGB Image](https://arxiv.org/abs/2304.03635)
 [^2]: [Reconstructing Hands in 3D with Transformers](https://arxiv.org/abs/2312.05251)

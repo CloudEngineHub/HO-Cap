@@ -54,9 +54,9 @@ def download_box_file(box_link, output_file):
 
 
 if __name__ == "__main__":
-    bmark_data = read_data_from_yaml("config/hocap_benchmarks.yaml")
+    behchmark_data = read_data_from_yaml("config/hocap_benchmarks.yaml")
 
-    for file_name, file_link in bmark_data.items():
+    for file_name, file_link in behchmark_data.items():
         tqdm.write(f"- Downloading {file_name}...")
         if "demo" in file_name:
             save_path = PROJ_ROOT / "results" / f"{file_name}.json"
