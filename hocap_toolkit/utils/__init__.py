@@ -2,7 +2,7 @@ from .common_imports import *
 from .io import *
 from .cv_utils import *
 from .transforms import *
-from .mano_info import NEW_MANO_FACES, NUM_MANO_VERTS
+from .mano_info import NEW_MANO_FACES, NUM_MANO_VERTS, NUM_MANO_FACES
 
 
 def add_path(path):

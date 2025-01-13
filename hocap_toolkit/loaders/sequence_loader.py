@@ -253,6 +253,13 @@ class SequenceLoader:
         image_file = self._data_folder / f"{serial}/depth_{frame_id:06d}.png"
         return read_depth_image(image_file, scale=1000.0)
 
+    def get_image_label(self, frame_id: int, serial: str) -> dict:
+        """Get image label data."""
+        label_file = self._data_folder / f"{serial}/label_{frame_id:06d}.npz"
+        if not label_file.exists():
+            return {}
+        return np.load(label_file)
+
     def step(self):
         """Step to the next frame."""
         self._frame_id = (self._frame_id + 1) % self._num_frames

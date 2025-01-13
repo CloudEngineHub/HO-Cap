@@ -95,22 +95,24 @@ class SequenceRenderer:
         return v.cpu().numpy()
 
     def _get_mano_faces(self):
+        mano_faces = self._mano_group_layer.f.cpu().numpy()
         mano_faces = [
             np.concatenate(
-                [self._mano_group_layer.f.cpu().numpy(), NEW_MANO_FACES[side]]
+                [
+                    mano_faces[idx * NUM_MANO_FACES : (idx + 1) * NUM_MANO_FACES]
+                    - idx * NUM_MANO_VERTS,
+                    NEW_MANO_FACES[side],
+                ]
             )
-            for side in self._mano_sides
+            for idx, side in enumerate(self._mano_sides)
         ]
         return mano_faces
 
     def _get_mano_colors(self):
-        mano_colors = np.stack(
-            [
-                [HAND_COLORS[1].rgb if side == "right" else HAND_COLORS[2].rgb]
-                * NUM_MANO_VERTS
-                for side in self._mano_sides
-            ]
-        )
+        mano_colors = [
+            HAND_COLORS[1].rgb if side == "right" else HAND_COLORS[2].rgb
+            for side in self._mano_sides
+        ]
         return mano_colors
 
     def _get_mano_meshes(self, frame_id):
@@ -121,7 +123,6 @@ class SequenceRenderer:
                 ],
                 faces=self._mano_faces[i],
                 vertex_colors=self._mano_colors[i],
-                process=False,
             )
             for i in range(len(self._mano_sides))
         ]
@@ -311,20 +312,3 @@ def plot_and_save_images(images):
     # Display the plot
     plt.tight_layout()
     plt.show()
-
-
-if __name__ == "__main__":
-    sequence_folder = PROJ_ROOT / "data/subject_1/20231025_165502"
-    renderer = SequenceRenderer(sequence_folder)
-
-    frame_id = 70
-
-    renderer.create_scene(frame_id)
-    render_colors = renderer.get_render_colors()
-    render_depths = renderer.get_render_depths()
-    render_masks = renderer.get_render_masks()
-
-    for serial, render_color in render_colors.items():
-        color = renderer.get_rgb_image(frame_id, serial)
-        color = cv2.addWeighted(color, 0.5, render_color, 0.5, 0)
-        write_rgb_image(f"color_{serial}.png", color)
