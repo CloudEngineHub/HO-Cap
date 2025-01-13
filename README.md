@@ -34,7 +34,7 @@ Jikai Wang, Qifan Zhang, Yu-Wei Chao, Bowen Wen, Xiaohu Guo, Yu Xiang
   - [HOCap Dataset Split for Training and Testing](#hocap-dataset-split-for-training-and-testing)
 
 ## News
-- :warning::warning: **2025-01-13**: We fixed the bug in image labels for "hand_joints_3d" and "hand_joints_2d". Please **re-download** the [labels](https://utdallas.box.com/s/dt19tcvhwitz223cjqa5riot6zcf6yba) and **regenerate** the HPE split dataset.
+- :warning::warning: **2025-01-13**: We fixed the bug in image labels for "hand_joints_3d" and "hand_joints_2d". Please **re-download** the [labels](https://utdallas.box.com/s/ayd4st2wo588z2yqbuxalptxnz2qxlj5) and **regenerate** the HPE split dataset.
 - **2025-01-13**: The code for image label visualization is added! Please check the [here](#loading-dataset-and-visualizing-samples) (item 4).
 - **2024-12-15**: The training codes and datasets for YOLO11 and RT-DETR are added! Please check the [here](#training-yolo11-and-rt-detr-for-object-detection).
 - **2024-12-15**: The Object Collection dataset is added! Please check the [project page](https://irvlutd.github.io/HOCap/) for more details.
