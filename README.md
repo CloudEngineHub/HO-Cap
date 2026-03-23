@@ -34,6 +34,7 @@ Jikai Wang, Qifan Zhang, Yu-Wei Chao, Bowen Wen, Xiaohu Guo, Yu Xiang
   - [HOCap Dataset Split for Training and Testing](#hocap-dataset-split-for-training-and-testing)
 
 ## News
+
 - :warning::warning: **2025-01-13**: We fixed the bug in image labels for "hand_joints_3d" and "hand_joints_2d". Please **re-download** the [labels](https://utdallas.box.com/s/ayd4st2wo588z2yqbuxalptxnz2qxlj5) and **regenerate** the HPE split dataset.
 - **2025-01-13**: The code for image label visualization is added! Please check the [here](#loading-dataset-and-visualizing-samples) (item 4).
 - **2024-12-15**: The training codes and datasets for YOLO11 and RT-DETR are added! Please check the [here](#training-yolo11-and-rt-detr-for-object-detection).
@@ -99,7 +100,7 @@ This code is tested with [Python 3.10](https://docs.python.org/3.10) and [CUDA 1
 6. Install hocap-toolkit package.
 
    ```bash
-   python -m pip install -e .
+   python -m pip install --no-build-isolation -e .
    ```
 
 7. Download MANO models and code (`mano_v1_2.zip`) from the [MANO website](https://mano.is.tue.mpg.de) and place the extracted `.pkl` files under `config/mano_models` directory. The directory should look like this:
@@ -183,7 +184,6 @@ The HOCap dataset provides the following labels:
    ![sequence_3d_viewer](./assets/sequence_3d_viewer.gif)
 
    The 3D viewer provides the following functionalities:
-
    - `Background`: change the background color.
    - `Point Size`: change the point size.
    - `Show Skybox`: display/hide the skybox.
@@ -344,10 +344,17 @@ Or run below code to split the HOCap dataset manually, the split dataset will be
     ```
 
 [^1]: [A2J-Transformer: Anchor-to-Joint Transformer Network for 3D Interacting Hand Pose Estimation from a Single RGB Image](https://arxiv.org/abs/2304.03635)
+
 [^2]: [Reconstructing Hands in 3D with Transformers](https://arxiv.org/abs/2312.05251)
+
 [^3]: [MegaPose: 6D Pose Estimation of Novel Objects via Render & Compare](https://arxiv.org/abs/2212.06870)
+
 [^4]: [FoundationPose: Unified 6D Pose Estimation and Tracking of Novel Objects](https://arxiv.org/abs/2312.08344)
+
 [^5]: [CNOS: A Strong Baseline for CAD-based Novel Object Segmentation](http://arxiv.org/abs/2307.11067)
+
 [^6]: [Grounding DINO: Marrying DINO with Grounded Pre-Training for Open-Set Object Detection](https://arxiv.org/abs/2303.05499)
+
 [^7]: [YOLOv11: An Overview of the Key Architectural Enhancements](https://arxiv.org/html/2410.17725v1)
+
 [^8]: [DETRs Beat YOLOs on Real-time Object Detection](https://arxiv.org/abs/2304.08069)

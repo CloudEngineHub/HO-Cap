@@ -30,8 +30,8 @@ dependencies = [
     "mediapipe==0.10.14",
     "gdown>=5.2.0",
     "pycocotools>=2.0.7",
-    "chumpy @ git+https://github.com/gobanana520/chumpy.git",
-    "manopth @ git+https://github.com/gobanana520/manopth.git"
+    "chumpy @ git+https://github.com/jwroboticsvision/chumpy.git",
+    "manopth @ git+https://github.com/jwroboticsvision/manopth.git"
 ]
 
 [tool.setuptools.packages]
